@@ -23,7 +23,7 @@ interface Order {
   id: number
   userId: number
   commodityId: number
-  orderType: string
+  type: string
   quantity: number
   pricePerUnit: number
   totalAmount: number
@@ -34,7 +34,7 @@ interface Order {
 }
 
 const UserDashboard: React.FC = () => {
-  const { user, logout, token } = useAuth()
+  const { user, logout, token, refreshUser } = useAuth()
   const [activeTab, setActiveTab] = useState('commodities')
   const [commodities, setCommodities] = useState<Commodity[]>([])
   const [orders, setOrders] = useState<Order[]>([])
@@ -133,6 +133,7 @@ const UserDashboard: React.FC = () => {
           [commodityId]: { ...prev[commodityId], isTrading: false, quantity: '' }
         }))
         fetchData()
+        refreshUser()
       } else {
         const errorData = await response.json()
         setError(errorData.detail || 'Failed to place order')
@@ -149,7 +150,7 @@ const UserDashboard: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-lg font-semibold text-blue-900">Available Balance</h3>
-              <p className="text-2xl font-bold text-blue-600">₹{user?.walletBalance.toFixed(2)}</p>
+              <p className="text-2xl font-bold text-blue-600">₹{user?.walletBalance?.toFixed(2) || '0.00'}</p>
             </div>
             <div className="text-blue-500">
               <TrendingUp className="h-8 w-8" />
@@ -182,7 +183,7 @@ const UserDashboard: React.FC = () => {
                   Previous: ₹{commodity.previousPrice || commodity.currentPrice}
                 </div>
                 <div className="text-xs text-gray-500">
-                  Updated: {new Date(commodity.lastUpdated).toLocaleString()}
+                  Updated: {commodity.lastUpdated ? new Date(commodity.lastUpdated).toLocaleString() : 'Unknown'}
                 </div>
                 {!tradingStates[commodity.id]?.isTrading ? (
                   <Button 
@@ -275,15 +276,15 @@ const UserDashboard: React.FC = () => {
                   <div>
                     <h4 className="font-semibold">Order #{order.id}</h4>
                     <p className="text-sm text-gray-600">
-                      {order.orderType.toUpperCase()} {order.quantity} {commodity?.unit} of {commodity?.name}
+                      {order.type.toUpperCase()} {order.quantity} {commodity?.unit || 'units'} of {commodity?.name || 'Unknown'}
                     </p>
                     <p className="text-xs text-gray-500">
-                      {new Date(order.createdAt).toLocaleDateString()}
+                      {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : 'Pending'}
                     </p>
                   </div>
                   <div className="text-right">
-                    <div className="font-semibold">₹{order.totalAmount.toFixed(2)}</div>
-                    <div className="text-xs text-gray-600">@ ₹{order.pricePerUnit}</div>
+                    <div className="font-semibold">₹{order.totalAmount?.toFixed(2) || '0.00'}</div>
+                    <div className="text-xs text-gray-600">@ ₹{order.pricePerUnit || '0.00'}</div>
                     <Badge variant={
                       order.status === 'approved' ? 'default' :
                       order.status === 'rejected' ? 'destructive' : 'secondary'
@@ -322,7 +323,7 @@ const UserDashboard: React.FC = () => {
             <div className="flex items-center space-x-4">
               <div className="text-right">
                 <p className="text-sm font-medium text-gray-900">{user?.username}</p>
-                <p className="text-xs text-gray-600">Wallet: ₹{user?.walletBalance.toFixed(2)}</p>
+                <p className="text-xs text-gray-600">Wallet: ₹{user?.walletBalance?.toFixed(2) || '0.00'}</p>
               </div>
               <Button variant="outline" onClick={logout}>
                 <LogOut className="h-4 w-4 mr-2" />
