@@ -2,7 +2,7 @@ spring:
   application:
     name: inditradApplication
   datasource:
-    url: jdbc:postgresql://localhost:5432/commodity_desk
+    url: jdbc:postgresql://localhost:5432/inditrad
     username: postgres
     password: admin123
   jpa:
