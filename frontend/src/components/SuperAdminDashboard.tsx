@@ -5,7 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { LogOut, Users, TrendingUp, DollarSign, Settings, Edit } from 'lucide-react'
+import { LogOut, Users, TrendingUp, DollarSign, Settings, Edit, Eye } from 'lucide-react'
+import CreateUserModal from './CreateUserModal'
+import CreateAdminModal from './CreateAdminModal'
 
 interface User {
   id: number
@@ -48,11 +50,19 @@ const SuperAdminDashboard: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [selectedAdminUsers, setSelectedAdminUsers] = useState<User[]>([])
+  const [showAdminDetails, setShowAdminDetails] = useState(false)
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 
   useEffect(() => {
     fetchData()
+    
+    const interval = setInterval(() => {
+      fetchData()
+    }, 30000)
+    
+    return () => clearInterval(interval)
   }, [])
 
   const fetchData = async () => {
@@ -77,6 +87,22 @@ const SuperAdminDashboard: React.FC = () => {
       setError('Failed to fetch data')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchAdminUsers = async (adminId: number) => {
+    try {
+      const response = await fetch(`${API_URL}/api/admin/${adminId}/users`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      
+      if (response.ok) {
+        const adminUsers = await response.json()
+        setSelectedAdminUsers(adminUsers)
+        setShowAdminDetails(true)
+      }
+    } catch (err) {
+      setError('Failed to fetch admin users')
     }
   }
 
@@ -278,30 +304,84 @@ const SuperAdminDashboard: React.FC = () => {
             {activeTab === 'commodities' && renderCommodities()}
             {activeTab === 'users' && (
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold">User Management</h3>
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-semibold">User Management</h3>
+                  <div className="flex space-x-2">
+                    <CreateAdminModal onAdminCreated={fetchData} />
+                    <CreateUserModal onUserCreated={fetchData} />
+                  </div>
+                </div>
+                
                 <div className="grid gap-4">
-                  {users.map((u) => (
-                    <Card key={u.id}>
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h4 className="font-semibold">{u.username}</h4>
-                            <p className="text-sm text-gray-600">{u.email}</p>
-                          </div>
-                          <div className="flex items-center space-x-4">
-                            <Badge variant={u.role === 'admin' ? 'default' : 'secondary'}>
-                              {u.role}
-                            </Badge>
-                            <div className="text-right">
-                              <div className="font-semibold">${(u.walletBalance || 0).toFixed(2)}</div>
-                              <div className="text-xs text-gray-600">Wallet Balance</div>
+                  <div className="mb-4">
+                    <h4 className="font-semibold mb-2">Admins</h4>
+                    {users.filter(u => u.role === 'admin').map((admin) => (
+                      <Card key={admin.id} className="mb-2">
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h4 className="font-semibold">{admin.username}</h4>
+                              <p className="text-sm text-gray-600">{admin.email}</p>
+                            </div>
+                            <div className="flex items-center space-x-4">
+                              <Badge variant="default">Admin</Badge>
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => fetchAdminUsers(admin.id)}
+                              >
+                                <Eye className="h-4 w-4 mr-1" />
+                                View Users
+                              </Button>
                             </div>
                           </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                  
+                  <div>
+                    <h4 className="font-semibold mb-2">All Users</h4>
+                    {users.filter(u => u.role === 'user').map((u) => (
+                      <Card key={u.id}>
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h4 className="font-semibold">{u.username}</h4>
+                              <p className="text-sm text-gray-600">{u.email}</p>
+                            </div>
+                            <div className="flex items-center space-x-4">
+                              <Badge variant="secondary">User</Badge>
+                              <div className="text-right">
+                                <div className="font-semibold">${(u.walletBalance || 0).toFixed(2)}</div>
+                                <div className="text-xs text-gray-600">Wallet Balance</div>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
                 </div>
+                
+                {showAdminDetails && (
+                  <div className="mt-6 p-4 border rounded-lg bg-gray-50">
+                    <div className="flex justify-between items-center mb-4">
+                      <h4 className="font-semibold">Admin Users ({selectedAdminUsers.length})</h4>
+                      <Button size="sm" variant="outline" onClick={() => setShowAdminDetails(false)}>
+                        Close
+                      </Button>
+                    </div>
+                    <div className="grid gap-2">
+                      {selectedAdminUsers.map((user) => (
+                        <div key={user.id} className="flex justify-between items-center p-2 bg-white rounded">
+                          <span>{user.username}</span>
+                          <span className="text-sm text-gray-600">${(user.walletBalance || 0).toFixed(2)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
             {activeTab === 'orders' && (

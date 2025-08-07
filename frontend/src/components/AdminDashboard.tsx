@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { LogOut, Users, TrendingUp, DollarSign, CheckCircle, XCircle } from 'lucide-react'
+import CreateUserModal from './CreateUserModal'
 
 interface User {
   id: number
@@ -52,10 +53,16 @@ const AdminDashboard: React.FC = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 
   useEffect(() => {
     fetchData()
+    
+    const interval = setInterval(() => {
+      fetchData()
+    }, 30000)
+    
+    return () => clearInterval(interval)
   }, [])
 
   const fetchData = async () => {
@@ -291,7 +298,10 @@ const AdminDashboard: React.FC = () => {
             )}
             {activeTab === 'users' && (
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold">My Users</h3>
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-semibold">My Users</h3>
+                  <CreateUserModal onUserCreated={fetchData} adminId={user?.id} />
+                </div>
                 <div className="grid gap-4">
                   {myUsers.map((u) => (
                     <Card key={u.id}>
@@ -307,8 +317,8 @@ const AdminDashboard: React.FC = () => {
                           <div className="text-right">
                             <div className="font-semibold">${u.walletBalance.toFixed(2)}</div>
                             <div className="text-xs text-gray-600">Wallet Balance</div>
-                            <Badge variant={u.isActive ? 'default' : 'secondary'}>
-                              {u.isActive ? 'Active' : 'Inactive'}
+                            <Badge variant="default">
+                              Active
                             </Badge>
                           </div>
                         </div>

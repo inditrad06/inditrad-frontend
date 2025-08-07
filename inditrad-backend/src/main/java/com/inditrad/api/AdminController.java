@@ -27,16 +27,6 @@ public class AdminController {
     private final AdminService adminService;
     private final AppUserRepository appUserRepository;
 
-    @Operation(summary = "Create admin", description = "Super admin creates a new admin account.")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Success"),
-        @ApiResponse(responseCode = "400", description = "Bad Request"),
-        @ApiResponse(responseCode = "500", description = "Internal Server Error")
-    })
-    @PostMapping("/superadmin/create-admin")
-    public Admin createAdmin(@RequestBody CreateAdminRequest request) {
-        return adminService.createAdmin(request);
-    }
 
     @Operation(summary = "Create user", description = "Admin creates a new user with initial wallet balance.")
     @ApiResponses(value = {

@@ -47,10 +47,16 @@ const UserDashboard: React.FC = () => {
   const [orderType, setOrderType] = useState<'buy' | 'sell'>('buy')
   const [quantity, setQuantity] = useState('')
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 
   useEffect(() => {
     fetchData()
+    
+    const interval = setInterval(() => {
+      fetchData()
+    }, 30000)
+    
+    return () => clearInterval(interval)
   }, [])
 
   const fetchData = async () => {
