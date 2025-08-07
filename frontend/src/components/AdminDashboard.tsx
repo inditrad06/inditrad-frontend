@@ -25,14 +25,16 @@ interface User {
 
 interface Order {
   id: number
-  userId: number
-  commodityId: number
+  userId?: number
+  commodityId?: number
   type: string
   quantity: number
-  pricePerUnit: number
-  totalAmount: number
+  pricePerUnit?: number
+  price?: number
+  totalAmount?: number
   status: string
-  createdAt: string
+  createdAt?: string
+  timestamp?: string
   processedAt?: string
   processedBy?: number
 }
@@ -285,6 +287,9 @@ const AdminDashboard: React.FC = () => {
                   {orders.map((order) => {
                     const commodity = commodities.find(c => c.id === order.commodityId)
                     const orderUser = users.find(u => u.id === order.userId)
+                    const pricePerUnit = order.price || order.pricePerUnit || 0
+                    const totalAmount = pricePerUnit * (order.quantity || 0)
+                    const createdAt = order.timestamp || order.createdAt
                     
                     return (
                       <Card key={order.id}>
@@ -296,13 +301,13 @@ const AdminDashboard: React.FC = () => {
                                 {orderUser?.username || 'Unknown User'} - {order.type.toUpperCase()} {order.quantity} {commodity?.unit || 'units'} of {commodity?.name || 'Unknown'}
                               </p>
                               <p className="text-xs text-gray-500">
-                                {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : 'Pending'}
+                                {createdAt ? new Date(createdAt).toLocaleDateString() : 'Pending'}
                               </p>
                             </div>
                             <div className="flex items-center space-x-4">
                               <div className="text-right">
-                                <div className="font-semibold">₹{order.totalAmount?.toFixed(2) || '0.00'}</div>
-                                <div className="text-xs text-gray-600">@ ₹{order.pricePerUnit || '0.00'}</div>
+                                <div className="font-semibold">₹{totalAmount.toFixed(2)}</div>
+                                <div className="text-xs text-gray-600">@ ₹{pricePerUnit.toFixed(2)}</div>
                               </div>
                               <Badge variant={
                                 order.status === 'approved' ? 'default' :
