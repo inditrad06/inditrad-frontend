@@ -27,7 +27,7 @@ interface Order {
   id: number
   userId: number
   commodityId: number
-  orderType: string
+  type: string
   quantity: number
   pricePerUnit: number
   totalAmount: number
@@ -293,16 +293,16 @@ const AdminDashboard: React.FC = () => {
                             <div>
                               <h4 className="font-semibold">Order #{order.id}</h4>
                               <p className="text-sm text-gray-600">
-                                {orderUser?.username} - {order.orderType.toUpperCase()} {order.quantity} {commodity?.unit} of {commodity?.name}
+                                {orderUser?.username || 'Unknown User'} - {order.type.toUpperCase()} {order.quantity} {commodity?.unit || 'units'} of {commodity?.name || 'Unknown'}
                               </p>
                               <p className="text-xs text-gray-500">
-                                {new Date(order.createdAt).toLocaleDateString()}
+                                {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : 'Pending'}
                               </p>
                             </div>
                             <div className="flex items-center space-x-4">
                               <div className="text-right">
-                                <div className="font-semibold">${order.totalAmount.toFixed(2)}</div>
-                                <div className="text-xs text-gray-600">@ ${order.pricePerUnit}</div>
+                                <div className="font-semibold">₹{order.totalAmount?.toFixed(2) || '0.00'}</div>
+                                <div className="text-xs text-gray-600">@ ₹{order.pricePerUnit || '0.00'}</div>
                               </div>
                               <Badge variant={
                                 order.status === 'approved' ? 'default' :
@@ -352,11 +352,11 @@ const AdminDashboard: React.FC = () => {
                             <h4 className="font-semibold">{u.username}</h4>
                             {u.email && <p className="text-sm text-gray-600">{u.email}</p>}
                             <p className="text-xs text-gray-500">
-                              Joined: {new Date(u.createdAt).toLocaleDateString()}
+                              Joined: {u.createdAt ? new Date(u.createdAt).toLocaleDateString() : 'Unknown'}
                             </p>
                           </div>
                           <div className="flex flex-col items-end space-y-2">
-                            <div className="font-semibold">₹{u.walletBalance.toFixed(2)}</div>
+                            <div className="font-semibold">₹{u.walletBalance?.toFixed(2) || '0.00'}</div>
                             <div className="text-xs text-gray-600">Wallet Balance</div>
                             <Badge 
                               variant={u.status === 'ACTIVE' ? 'default' : 'destructive'}

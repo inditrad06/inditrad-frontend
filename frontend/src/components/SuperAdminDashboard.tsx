@@ -40,7 +40,7 @@ interface Order {
   id: number
   userId: number
   commodityId: number
-  orderType: string
+  type: string
   quantity: number
   pricePerUnit: number
   totalAmount: number
@@ -211,9 +211,9 @@ const SuperAdminDashboard: React.FC = () => {
                     <p className="text-sm text-gray-600">{commodity.unit}</p>
                   </div>
                   <div className="text-right">
-                    <div className="text-lg font-bold">${commodity.currentPrice}</div>
+                    <div className="text-lg font-bold">₹{commodity.currentPrice}</div>
                     <div className="text-sm text-gray-600">
-                      Updated: {new Date(commodity.lastUpdated).toLocaleDateString()}
+                      Updated: {commodity.lastUpdated ? new Date(commodity.lastUpdated).toLocaleDateString() : 'Unknown'}
                     </div>
                   </div>
                 </div>
@@ -333,7 +333,7 @@ const SuperAdminDashboard: React.FC = () => {
                               <h4 className="font-semibold">{admin.username}</h4>
                               <p className="text-sm text-gray-600">{admin.email || admin.name}</p>
                               <p className="text-xs text-gray-500">
-                                Created: {new Date(admin.createdAt).toLocaleDateString()}
+                                Created: {admin.createdAt ? new Date(admin.createdAt).toLocaleDateString() : 'Unknown'}
                               </p>
                             </div>
                             <div className="flex items-center space-x-4">
@@ -363,13 +363,13 @@ const SuperAdminDashboard: React.FC = () => {
                               <h4 className="font-semibold">{u.username}</h4>
                               <p className="text-sm text-gray-600">{u.email}</p>
                               <p className="text-xs text-gray-500">
-                                Created: {new Date(u.createdAt).toLocaleDateString()}
+                                Created: {u.createdAt ? new Date(u.createdAt).toLocaleDateString() : 'Unknown'}
                               </p>
                             </div>
                             <div className="flex items-center space-x-4">
                               <Badge variant="secondary">User</Badge>
                               <div className="text-right">
-                                <div className="font-semibold">${(u.walletBalance || 0).toFixed(2)}</div>
+                                <div className="font-semibold">₹{(u.walletBalance || 0).toFixed(2)}</div>
                                 <div className="text-xs text-gray-600">Wallet Balance</div>
                               </div>
                             </div>
@@ -392,7 +392,7 @@ const SuperAdminDashboard: React.FC = () => {
                       {selectedAdminUsers.map((user) => (
                         <div key={user.id} className="flex justify-between items-center p-2 bg-white rounded">
                           <span>{user.username}</span>
-                          <span className="text-sm text-gray-600">${(user.walletBalance || 0).toFixed(2)}</span>
+                          <span className="text-sm text-gray-600">₹{(user.walletBalance || 0).toFixed(2)}</span>
                         </div>
                       ))}
                     </div>
@@ -411,7 +411,7 @@ const SuperAdminDashboard: React.FC = () => {
                           <div>
                             <h4 className="font-semibold">Order #{order.id}</h4>
                             <p className="text-sm text-gray-600">
-                              {order.orderType.toUpperCase()} - {order.quantity} units
+                              {order.type.toUpperCase()} - {order.quantity} units
                             </p>
                           </div>
                           <div className="flex items-center space-x-4">
@@ -422,7 +422,7 @@ const SuperAdminDashboard: React.FC = () => {
                               {order.status}
                             </Badge>
                             <div className="text-right">
-                              <div className="font-semibold">${order.totalAmount.toFixed(2)}</div>
+                              <div className="font-semibold">₹{order.totalAmount?.toFixed(2) || '0.00'}</div>
                               <div className="text-xs text-gray-600">Total Amount</div>
                             </div>
                           </div>
