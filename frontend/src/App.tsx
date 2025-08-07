@@ -4,6 +4,8 @@ import LoginPage from './components/LoginPage'
 import SuperAdminDashboard from './components/SuperAdminDashboard'
 import AdminDashboard from './components/AdminDashboard'
 import UserDashboard from './components/UserDashboard'
+import CreateAdminPage from './components/CreateAdminPage'
+import CreateUserPage from './components/CreateUserPage'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import './App.css'
 
@@ -54,6 +56,22 @@ function AppRoutes() {
         element={
           <ProtectedRoute allowedRoles={['user']}>
             <UserDashboard />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/create-admin" 
+        element={
+          <ProtectedRoute allowedRoles={['super_admin']}>
+            <CreateAdminPage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/create-user" 
+        element={
+          <ProtectedRoute allowedRoles={['super_admin', 'admin']}>
+            <CreateUserPage />
           </ProtectedRoute>
         } 
       />

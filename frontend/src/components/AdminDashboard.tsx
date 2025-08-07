@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Button } from './ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
+import { Badge } from './ui/badge'
+import { Alert, AlertDescription } from './ui/alert'
 import { LogOut, Users, TrendingUp, DollarSign, CheckCircle, XCircle } from 'lucide-react'
-import CreateUserModal from './CreateUserModal'
 
 interface User {
   id: number
@@ -46,6 +46,7 @@ interface Commodity {
 
 const AdminDashboard: React.FC = () => {
   const { user, logout, token } = useAuth()
+  const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('overview')
   const [users, setUsers] = useState<User[]>([])
   const [orders, setOrders] = useState<Order[]>([])
@@ -53,16 +54,10 @@ const AdminDashboard: React.FC = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080'
+  const API_URL = 'http://localhost:8080'
 
   useEffect(() => {
     fetchData()
-    
-    const interval = setInterval(() => {
-      fetchData()
-    }, 30000)
-    
-    return () => clearInterval(interval)
   }, [])
 
   const fetchData = async () => {
@@ -300,7 +295,7 @@ const AdminDashboard: React.FC = () => {
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <h3 className="text-lg font-semibold">My Users</h3>
-                  <CreateUserModal onUserCreated={fetchData} adminId={user?.id} />
+                  <Button onClick={() => navigate('/create-user')}>Add User</Button>
                 </div>
                 <div className="grid gap-4">
                   {myUsers.map((u) => (
