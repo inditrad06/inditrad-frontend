@@ -51,6 +51,7 @@ const CreateAdminModal: React.FC<CreateAdminModalProps> = ({ onAdminCreated }) =
       })
 
       if (response.ok) {
+        console.log('Admin created successfully, calling onAdminCreated callback')
         setOpen(false)
         form.reset()
         onAdminCreated()
