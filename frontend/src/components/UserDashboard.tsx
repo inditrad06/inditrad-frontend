@@ -21,14 +21,16 @@ interface Commodity {
 
 interface Order {
   id: number
-  userId: number
-  commodityId: number
+  userId?: number
+  commodityId?: number
   type: string
   quantity: number
-  pricePerUnit: number
-  totalAmount: number
+  pricePerUnit?: number
+  price?: number
+  totalAmount?: number
   status: string
-  createdAt: string
+  createdAt?: string
+  timestamp?: string
   processedAt?: string
   processedBy?: number
 }
@@ -267,7 +269,12 @@ const UserDashboard: React.FC = () => {
       <h3 className="text-lg font-semibold">Order History</h3>
       <div className="grid gap-4">
         {orders.map((order) => {
-          const commodity = commodities.find(c => c.id === order.commodityId)
+          const pricePerUnit = order.price || order.pricePerUnit || 0
+          const commodity = commodities.find(c => 
+            Math.abs(c.currentPrice - pricePerUnit) < 100
+          ) || commodities[0] // fallback to first commodity if no close match
+          const totalAmount = pricePerUnit * (order.quantity || 0)
+          const createdAt = order.timestamp || order.createdAt
           
           return (
             <Card key={order.id}>
@@ -279,12 +286,12 @@ const UserDashboard: React.FC = () => {
                       {order.type.toUpperCase()} {order.quantity} {commodity?.unit || 'units'} of {commodity?.name || 'Unknown'}
                     </p>
                     <p className="text-xs text-gray-500">
-                      {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : 'Pending'}
+                      {createdAt ? new Date(createdAt).toLocaleDateString() : 'Pending'}
                     </p>
                   </div>
                   <div className="text-right">
-                    <div className="font-semibold">₹{order.totalAmount?.toFixed(2) || '0.00'}</div>
-                    <div className="text-xs text-gray-600">@ ₹{order.pricePerUnit || '0.00'}</div>
+                    <div className="font-semibold">₹{totalAmount.toFixed(2)}</div>
+                    <div className="text-xs text-gray-600">@ ₹{pricePerUnit.toFixed(2)}</div>
                     <Badge variant={
                       order.status === 'approved' ? 'default' :
                       order.status === 'rejected' ? 'destructive' : 'secondary'

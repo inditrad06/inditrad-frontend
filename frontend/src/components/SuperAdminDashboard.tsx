@@ -38,14 +38,16 @@ interface Commodity {
 
 interface Order {
   id: number
-  userId: number
-  commodityId: number
+  userId?: number
+  commodityId?: number
   type: string
   quantity: number
-  pricePerUnit: number
-  totalAmount: number
+  pricePerUnit?: number
+  price?: number
+  totalAmount?: number
   status: string
-  createdAt: string
+  createdAt?: string
+  timestamp?: string
   processedAt?: string
   processedBy?: number
 }
@@ -422,7 +424,7 @@ const SuperAdminDashboard: React.FC = () => {
                               {order.status}
                             </Badge>
                             <div className="text-right">
-                              <div className="font-semibold">₹{order.totalAmount?.toFixed(2) || '0.00'}</div>
+                              <div className="font-semibold">₹{((order.price || order.pricePerUnit || 0) * (order.quantity || 0)).toFixed(2)}</div>
                               <div className="text-xs text-gray-600">Total Amount</div>
                             </div>
                           </div>
