@@ -269,8 +269,10 @@ const UserDashboard: React.FC = () => {
       <h3 className="text-lg font-semibold">Order History</h3>
       <div className="grid gap-4">
         {orders.map((order) => {
-          const commodity = commodities.find(c => c.id === order.commodityId)
           const pricePerUnit = order.price || order.pricePerUnit || 0
+          const commodity = commodities.find(c => 
+            Math.abs(c.currentPrice - pricePerUnit) < 100
+          ) || commodities[0] // fallback to first commodity if no close match
           const totalAmount = pricePerUnit * (order.quantity || 0)
           const createdAt = order.timestamp || order.createdAt
           
