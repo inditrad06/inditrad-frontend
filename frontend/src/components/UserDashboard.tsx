@@ -3,10 +3,9 @@ import { useAuth } from '../contexts/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { LogOut, TrendingUp, ShoppingCart, History } from 'lucide-react'
+import { LogOut, TrendingUp, History } from 'lucide-react'
 
 interface Commodity {
   id: number
@@ -43,9 +42,8 @@ const UserDashboard: React.FC = () => {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   
-  const [selectedCommodity, setSelectedCommodity] = useState<number | null>(null)
-  const [orderType, setOrderType] = useState<'buy' | 'sell'>('buy')
-  const [quantity, setQuantity] = useState('')
+  const [tradingStates, setTradingStates] = useState<{[key: number]: {isTrading: boolean, orderType: 'buy' | 'sell', quantity: string}}>({})
+
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 
@@ -80,9 +78,36 @@ const UserDashboard: React.FC = () => {
     }
   }
 
-  const placeOrder = async () => {
-    if (!selectedCommodity || !quantity) {
-      setError('Please select a commodity and enter quantity')
+
+  const toggleTrading = (commodityId: number) => {
+    setTradingStates(prev => ({
+      ...prev,
+      [commodityId]: {
+        isTrading: !prev[commodityId]?.isTrading,
+        orderType: prev[commodityId]?.orderType || 'buy',
+        quantity: prev[commodityId]?.quantity || ''
+      }
+    }))
+  }
+
+  const setOrderTypeForCommodity = (commodityId: number, orderType: 'buy' | 'sell') => {
+    setTradingStates(prev => ({
+      ...prev,
+      [commodityId]: { ...prev[commodityId], orderType }
+    }))
+  }
+
+  const setQuantityForCommodity = (commodityId: number, quantity: string) => {
+    setTradingStates(prev => ({
+      ...prev,
+      [commodityId]: { ...prev[commodityId], quantity }
+    }))
+  }
+
+  const placeInlineOrder = async (commodityId: number) => {
+    const tradingState = tradingStates[commodityId]
+    if (!tradingState?.quantity) {
+      setError('Please enter quantity')
       return
     }
 
@@ -94,16 +119,18 @@ const UserDashboard: React.FC = () => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          commodityId: selectedCommodity,
-          orderType: orderType,
-          quantity: parseFloat(quantity)
+          commodityId: commodityId,
+          orderType: tradingState.orderType,
+          quantity: parseFloat(tradingState.quantity)
         })
       })
 
       if (response.ok) {
         setSuccess('Order placed successfully!')
-        setSelectedCommodity(null)
-        setQuantity('')
+        setTradingStates(prev => ({
+          ...prev,
+          [commodityId]: { ...prev[commodityId], isTrading: false, quantity: '' }
+        }))
         fetchData()
       } else {
         const errorData = await response.json()
@@ -113,10 +140,6 @@ const UserDashboard: React.FC = () => {
       setError('Failed to place order')
     }
   }
-
-  const selectedCommodityData = commodities.find(c => c.id === selectedCommodity)
-  const totalAmount = selectedCommodityData && quantity ? 
-    (parseFloat(quantity) * selectedCommodityData.currentPrice).toFixed(2) : '0.00'
 
   const renderCommodities = () => (
     <div className="space-y-6">
@@ -140,22 +163,76 @@ const UserDashboard: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                <div className="text-2xl font-bold">${commodity.currentPrice}</div>
+                <div className="text-2xl font-bold">₹{commodity.currentPrice}</div>
                 <div className="text-sm text-gray-600">
-                  Previous: ${commodity.previousPrice || commodity.currentPrice}
+                  Previous: ₹{commodity.previousPrice || commodity.currentPrice}
                 </div>
                 <div className="text-xs text-gray-500">
                   Updated: {new Date(commodity.lastUpdated).toLocaleString()}
                 </div>
-                <Button 
-                  className="w-full mt-3" 
-                  onClick={() => {
-                    setSelectedCommodity(commodity.id)
-                    setActiveTab('trade')
-                  }}
-                >
-                  Trade
-                </Button>
+                {!tradingStates[commodity.id]?.isTrading ? (
+                  <Button 
+                    className="w-full mt-3" 
+                    onClick={() => toggleTrading(commodity.id)}
+                  >
+                    Trade
+                  </Button>
+                ) : (
+                  <div className="mt-3 space-y-3 p-3 bg-gray-50 rounded-lg">
+                    <div className="flex space-x-2">
+                      <Button 
+                        size="sm" 
+                        variant={tradingStates[commodity.id]?.orderType === 'buy' ? 'default' : 'outline'}
+                        onClick={() => setOrderTypeForCommodity(commodity.id, 'buy')}
+                        className="flex-1"
+                      >
+                        Buy
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant={tradingStates[commodity.id]?.orderType === 'sell' ? 'default' : 'outline'}
+                        onClick={() => setOrderTypeForCommodity(commodity.id, 'sell')}
+                        className="flex-1"
+                      >
+                        Sell
+                      </Button>
+                    </div>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={tradingStates[commodity.id]?.quantity || ''}
+                      onChange={(e) => setQuantityForCommodity(commodity.id, e.target.value)}
+                      placeholder="Enter quantity"
+                      className="text-sm"
+                    />
+                    {tradingStates[commodity.id]?.quantity && (
+                      <div className="text-xs space-y-1">
+                        <div className="flex justify-between">
+                          <span>Total:</span>
+                          <span>₹{(parseFloat(tradingStates[commodity.id]?.quantity || '0') * commodity.currentPrice).toFixed(2)}</span>
+                        </div>
+                      </div>
+                    )}
+                    <div className="flex space-x-2">
+                      <Button 
+                        size="sm" 
+                        onClick={() => placeInlineOrder(commodity.id)}
+                        disabled={!tradingStates[commodity.id]?.quantity}
+                        className="flex-1"
+                      >
+                        Place Order
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => toggleTrading(commodity.id)}
+                        className="flex-1"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -164,83 +241,6 @@ const UserDashboard: React.FC = () => {
     </div>
   )
 
-  const renderTrade = () => (
-    <div className="max-w-md mx-auto">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <ShoppingCart className="h-5 w-5 mr-2" />
-            Place Order
-          </CardTitle>
-          <CardDescription>
-            Current wallet balance: ${user?.walletBalance.toFixed(2)}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <label className="text-sm font-medium">Commodity</label>
-            <Select value={selectedCommodity?.toString() || ''} onValueChange={(value) => setSelectedCommodity(parseInt(value))}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select commodity" />
-              </SelectTrigger>
-              <SelectContent>
-                {commodities.map((commodity) => (
-                  <SelectItem key={commodity.id} value={commodity.id.toString()}>
-                    {commodity.name} - ${commodity.currentPrice}/{commodity.unit}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <label className="text-sm font-medium">Order Type</label>
-            <Select value={orderType} onValueChange={(value: 'buy' | 'sell') => setOrderType(value)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="buy">Buy</SelectItem>
-                <SelectItem value="sell">Sell</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <label className="text-sm font-medium">Quantity</label>
-            <Input
-              type="number"
-              step="0.01"
-              value={quantity}
-              onChange={(e) => setQuantity(e.target.value)}
-              placeholder="Enter quantity"
-            />
-          </div>
-
-          {selectedCommodityData && quantity && (
-            <div className="p-3 bg-gray-50 rounded-lg">
-              <div className="flex justify-between text-sm">
-                <span>Price per unit:</span>
-                <span>${selectedCommodityData.currentPrice}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span>Quantity:</span>
-                <span>{quantity} {selectedCommodityData.unit}</span>
-              </div>
-              <div className="flex justify-between font-semibold border-t pt-2 mt-2">
-                <span>Total Amount:</span>
-                <span>${totalAmount}</span>
-              </div>
-            </div>
-          )}
-
-          <Button onClick={placeOrder} className="w-full" disabled={!selectedCommodity || !quantity}>
-            Place {orderType.toUpperCase()} Order
-          </Button>
-        </CardContent>
-      </Card>
-    </div>
-  )
 
   const renderOrders = () => (
     <div className="space-y-4">
@@ -263,8 +263,8 @@ const UserDashboard: React.FC = () => {
                     </p>
                   </div>
                   <div className="text-right">
-                    <div className="font-semibold">${order.totalAmount.toFixed(2)}</div>
-                    <div className="text-xs text-gray-600">@ ${order.pricePerUnit}</div>
+                    <div className="font-semibold">₹{order.totalAmount.toFixed(2)}</div>
+                    <div className="text-xs text-gray-600">@ ₹{order.pricePerUnit}</div>
                     <Badge variant={
                       order.status === 'approved' ? 'default' :
                       order.status === 'rejected' ? 'destructive' : 'secondary'
@@ -303,7 +303,7 @@ const UserDashboard: React.FC = () => {
             <div className="flex items-center space-x-4">
               <div className="text-right">
                 <p className="text-sm font-medium text-gray-900">{user?.username}</p>
-                <p className="text-xs text-gray-600">Wallet: ${user?.walletBalance.toFixed(2)}</p>
+                <p className="text-xs text-gray-600">Wallet: ₹{user?.walletBalance.toFixed(2)}</p>
               </div>
               <Button variant="outline" onClick={logout}>
                 <LogOut className="h-4 w-4 mr-2" />
@@ -320,7 +320,6 @@ const UserDashboard: React.FC = () => {
             <nav className="-mb-px flex space-x-8">
               {[
                 { id: 'commodities', label: 'Market Prices', icon: TrendingUp },
-                { id: 'trade', label: 'Place Order', icon: ShoppingCart },
                 { id: 'orders', label: 'Order History', icon: History }
               ].map((tab) => (
                 <button
@@ -359,7 +358,6 @@ const UserDashboard: React.FC = () => {
         ) : (
           <>
             {activeTab === 'commodities' && renderCommodities()}
-            {activeTab === 'trade' && renderTrade()}
             {activeTab === 'orders' && renderOrders()}
           </>
         )}
