@@ -119,9 +119,10 @@ const UserDashboard: React.FC = () => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
+          userId: user?.id,
           commodityId: commodityId,
-          orderType: tradingState.orderType,
-          quantity: parseFloat(tradingState.quantity)
+          transactionType: tradingState.orderType.toUpperCase(),
+          quantity: parseInt(tradingState.quantity)
         })
       })
 
@@ -143,6 +144,19 @@ const UserDashboard: React.FC = () => {
 
   const renderCommodities = () => (
     <div className="space-y-6">
+      <Card className="bg-blue-50 border-blue-200">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-blue-900">Available Balance</h3>
+              <p className="text-2xl font-bold text-blue-600">₹{user?.walletBalance.toFixed(2)}</p>
+            </div>
+            <div className="text-blue-500">
+              <TrendingUp className="h-8 w-8" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {commodities.map((commodity) => (
           <Card key={commodity.id} className="hover:shadow-lg transition-shadow">
@@ -199,17 +213,22 @@ const UserDashboard: React.FC = () => {
                     </div>
                     <Input
                       type="number"
-                      step="0.01"
+                      min="1"
                       value={tradingStates[commodity.id]?.quantity || ''}
-                      onChange={(e) => setQuantityForCommodity(commodity.id, e.target.value)}
-                      placeholder="Enter quantity"
+                      onChange={(e) => {
+                        const value = e.target.value
+                        if (value === '' || /^\d+$/.test(value)) {
+                          setQuantityForCommodity(commodity.id, value)
+                        }
+                      }}
+                      placeholder="Enter quantity (whole numbers only)"
                       className="text-sm"
                     />
                     {tradingStates[commodity.id]?.quantity && (
                       <div className="text-xs space-y-1">
                         <div className="flex justify-between">
                           <span>Total:</span>
-                          <span>₹{(parseFloat(tradingStates[commodity.id]?.quantity || '0') * commodity.currentPrice).toFixed(2)}</span>
+                          <span>₹{(parseInt(tradingStates[commodity.id]?.quantity || '0') * commodity.currentPrice).toFixed(2)}</span>
                         </div>
                       </div>
                     )}
