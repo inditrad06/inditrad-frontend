@@ -17,6 +17,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @RestController
@@ -48,5 +49,52 @@ public class AdminController {
     @GetMapping("/admin/{adminId}/users")
     public List<AppUser> getUsersByAdmin(@PathVariable Long adminId) {
         return appUserRepository.findByAdminId(adminId);
+    }
+    
+    @Operation(summary = "Get all users", description = "Retrieve all users for admin view.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Success"),
+        @ApiResponse(responseCode = "400", description = "Bad Request"),
+        @ApiResponse(responseCode = "500", description = "Internal Server Error")
+    })
+    @GetMapping("/users")
+    public List<AppUser> getAllUsers() {
+        return appUserRepository.findAll();
+    }
+    
+    @Operation(summary = "Update user status", description = "Enable or disable a user.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Success"),
+        @ApiResponse(responseCode = "400", description = "Bad Request"),
+        @ApiResponse(responseCode = "500", description = "Internal Server Error")
+    })
+    @PutMapping("/users/{userId}/status")
+    public AppUser updateUserStatus(@PathVariable Long userId, @RequestBody Map<String, String> request) {
+        String status = request.get("status");
+        if (!"ACTIVE".equals(status) && !"INACTIVE".equals(status)) {
+            throw new IllegalArgumentException("Status must be either ACTIVE or INACTIVE");
+        }
+        AppUser user = appUserRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        user.setStatus(status);
+        return appUserRepository.save(user);
+    }
+    
+    @Operation(summary = "Update user information", description = "Update user details.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Success"),
+        @ApiResponse(responseCode = "400", description = "Bad Request"),
+        @ApiResponse(responseCode = "500", description = "Internal Server Error")
+    })
+    @PutMapping("/users/{userId}")
+    public AppUser updateUserInfo(@PathVariable Long userId, @RequestBody Map<String, Object> request) {
+        AppUser user = appUserRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        if (request.containsKey("name")) user.setName((String) request.get("name"));
+        if (request.containsKey("email")) user.setEmail((String) request.get("email"));
+        if (request.containsKey("mobile")) user.setMobile((String) request.get("mobile"));
+        
+        return appUserRepository.save(user);
     }
 }

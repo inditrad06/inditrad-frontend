@@ -6,15 +6,20 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import { Badge } from './ui/badge'
 import { Alert, AlertDescription } from './ui/alert'
 import { LogOut, Users, TrendingUp, DollarSign, CheckCircle, XCircle } from 'lucide-react'
+import UpdateWalletModal from './UpdateWalletModal'
+import EditUserModal from './EditUserModal'
 
 interface User {
   id: number
   username: string
   email: string
+  name: string
+  mobile: string
   role: string
   walletBalance: number
   adminId?: number
   createdAt: string
+  status: string
   isActive: boolean
 }
 
@@ -53,6 +58,10 @@ const AdminDashboard: React.FC = () => {
   const [commodities, setCommodities] = useState<Commodity[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [walletModalOpen, setWalletModalOpen] = useState(false)
+  const [editUserModalOpen, setEditUserModalOpen] = useState(false)
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null)
+  const [selectedUser, setSelectedUser] = useState<User | null>(null)
 
   const API_URL = 'http://localhost:8080'
 
@@ -64,7 +73,7 @@ const AdminDashboard: React.FC = () => {
     setLoading(true)
     try {
       const [usersRes, ordersRes, commoditiesRes] = await Promise.all([
-        fetch(`${API_URL}/api/users`, {
+        fetch(`${API_URL}/api/admin/${user?.id}/users`, {
           headers: { 'Authorization': `Bearer ${token}` }
         }),
         fetch(`${API_URL}/api/transaction/orders`, {
@@ -106,7 +115,44 @@ const AdminDashboard: React.FC = () => {
     }
   }
 
-  const myUsers = users.filter(u => u.adminId === user?.id)
+  const toggleUserStatus = async (userId: number, newStatus: string) => {
+    try {
+      const response = await fetch(`${API_URL}/api/users/${userId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status: newStatus })
+      });
+      
+      if (response.ok) {
+        setError('');
+        fetchData();
+      } else {
+        setError('Failed to update user status');
+      }
+    } catch (err) {
+      setError('Failed to update user status');
+    }
+  };
+  
+  const openUpdateWalletModal = (userId: number) => {
+    setSelectedUserId(userId);
+    setWalletModalOpen(true);
+  };
+  
+  const openEditUserModal = (user: User) => {
+    setSelectedUser(user);
+    setEditUserModalOpen(true);
+  };
+  
+  const closeWalletModal = () => {
+    setWalletModalOpen(false);
+    setSelectedUserId(null);
+  };
+
+  const myUsers = users
   const pendingOrders = orders.filter(o => o.status === 'pending')
 
   const renderOverview = () => (
@@ -304,17 +350,28 @@ const AdminDashboard: React.FC = () => {
                         <div className="flex items-center justify-between">
                           <div>
                             <h4 className="font-semibold">{u.username}</h4>
-                            <p className="text-sm text-gray-600">{u.email}</p>
+                            {u.email && <p className="text-sm text-gray-600">{u.email}</p>}
                             <p className="text-xs text-gray-500">
                               Joined: {new Date(u.createdAt).toLocaleDateString()}
                             </p>
                           </div>
-                          <div className="text-right">
+                          <div className="flex flex-col items-end space-y-2">
                             <div className="font-semibold">${u.walletBalance.toFixed(2)}</div>
                             <div className="text-xs text-gray-600">Wallet Balance</div>
-                            <Badge variant="default">
-                              Active
+                            <Badge variant={u.status === 'ACTIVE' ? 'default' : 'secondary'}>
+                              {u.status || 'ACTIVE'}
                             </Badge>
+                            <div className="flex space-x-2 mt-2">
+                              <Button size="sm" variant="outline" onClick={() => toggleUserStatus(u.id, u.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE')}>
+                                {u.status === 'ACTIVE' ? 'Disable' : 'Enable'}
+                              </Button>
+                              <Button size="sm" variant="outline" onClick={() => openUpdateWalletModal(u.id)}>
+                                Update Wallet
+                              </Button>
+                              <Button size="sm" variant="outline" onClick={() => openEditUserModal(u)}>
+                                Edit
+                              </Button>
+                            </div>
                           </div>
                         </div>
                       </CardContent>
@@ -354,6 +411,24 @@ const AdminDashboard: React.FC = () => {
           </>
         )}
       </div>
+      
+      {/* Modals */}
+      {walletModalOpen && selectedUserId && (
+        <UpdateWalletModal
+          userId={selectedUserId}
+          isOpen={walletModalOpen}
+          onClose={closeWalletModal}
+          onSuccess={fetchData}
+        />
+      )}
+      {editUserModalOpen && selectedUser && (
+        <EditUserModal
+          user={selectedUser}
+          isOpen={editUserModalOpen}
+          onClose={() => setEditUserModalOpen(false)}
+          onSuccess={fetchData}
+        />
+      )}
     </div>
   )
 }

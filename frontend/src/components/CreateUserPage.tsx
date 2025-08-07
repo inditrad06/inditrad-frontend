@@ -15,7 +15,7 @@ const createUserSchema = z.object({
   username: z.string().min(3, 'Username must be at least 3 characters'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
   name: z.string().min(2, 'Name must be at least 2 characters'),
-  email: z.string().email('Invalid email address'),
+  email: z.string().email('Invalid email address').optional().or(z.literal('')),
   mobile: z.string().min(10, 'Mobile number must be at least 10 digits'),
   initialWalletBalance: z.number().min(0, 'Initial balance must be non-negative')
 })
@@ -33,7 +33,6 @@ const CreateUserPage: React.FC = () => {
   
   const API_URL = 'http://localhost:8080'
   const isAdmin = user?.role === 'admin'
-  const isSuperAdmin = user?.role === 'superadmin'
   
   const form = useForm<CreateUserFormData>({
     resolver: zodResolver(createUserSchema),
@@ -194,11 +193,11 @@ const CreateUserPage: React.FC = () => {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-base font-medium">Email Address</FormLabel>
+                      <FormLabel className="text-base font-medium">Email Address (Optional)</FormLabel>
                       <FormControl>
                         <Input 
                           type="email"
-                          placeholder="Enter email address" 
+                          placeholder="Enter email address (optional)" 
                           className="h-12 text-base"
                           {...field} 
                         />
