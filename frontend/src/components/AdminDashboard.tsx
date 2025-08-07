@@ -190,7 +190,7 @@ const AdminDashboard: React.FC = () => {
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">
-            ${myUsers.reduce((sum, u) => sum + u.walletBalance, 0).toFixed(2)}
+            ₹{myUsers.reduce((sum, u) => sum + u.walletBalance, 0).toFixed(2)}
           </div>
           <p className="text-xs text-muted-foreground">
             Your users' wallets
@@ -356,9 +356,12 @@ const AdminDashboard: React.FC = () => {
                             </p>
                           </div>
                           <div className="flex flex-col items-end space-y-2">
-                            <div className="font-semibold">${u.walletBalance.toFixed(2)}</div>
+                            <div className="font-semibold">₹{u.walletBalance.toFixed(2)}</div>
                             <div className="text-xs text-gray-600">Wallet Balance</div>
-                            <Badge variant={u.status === 'ACTIVE' ? 'default' : 'secondary'}>
+                            <Badge 
+                              variant={u.status === 'ACTIVE' ? 'default' : 'destructive'}
+                              className={u.status === 'ACTIVE' ? 'bg-green-600 text-white hover:bg-green-700' : ''}
+                            >
                               {u.status || 'ACTIVE'}
                             </Badge>
                             <div className="flex space-x-2 mt-2">
