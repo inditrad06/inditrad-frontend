@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -6,18 +7,25 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { LogOut, Users, TrendingUp, DollarSign, Settings, Edit, Eye } from 'lucide-react'
-import CreateUserModal from './CreateUserModal'
-import CreateAdminModal from './CreateAdminModal'
 
 interface User {
   id: number
   username: string
   email: string
-  role: string
   walletBalance: number
   admin?: any
   createdAt: string
   status: string
+}
+
+interface Admin {
+  id: number
+  username: string
+  email: string
+  name: string
+  mobile: string
+  status: string
+  createdAt: string
 }
 
 interface Commodity {
@@ -44,8 +52,10 @@ interface Order {
 
 const SuperAdminDashboard: React.FC = () => {
   const { user, logout, token } = useAuth()
+  const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('overview')
   const [users, setUsers] = useState<User[]>([])
+  const [admins, setAdmins] = useState<Admin[]>([])
   const [commodities, setCommodities] = useState<Commodity[]>([])
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(false)
@@ -57,19 +67,16 @@ const SuperAdminDashboard: React.FC = () => {
 
   useEffect(() => {
     fetchData()
-    
-    const interval = setInterval(() => {
-      fetchData()
-    }, 30000)
-    
-    return () => clearInterval(interval)
   }, [])
 
   const fetchData = async () => {
     setLoading(true)
     try {
-      const [usersRes, commoditiesRes, ordersRes] = await Promise.all([
+      const [usersRes, adminsRes, commoditiesRes, ordersRes] = await Promise.all([
         fetch(`${API_URL}/api/superadmin/users`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }),
+        fetch(`${API_URL}/api/superadmin/admins`, {
           headers: { 'Authorization': `Bearer ${token}` }
         }),
         fetch(`${API_URL}/api/commodities`, {
@@ -81,6 +88,7 @@ const SuperAdminDashboard: React.FC = () => {
       ])
 
       if (usersRes.ok) setUsers(await usersRes.json())
+      if (adminsRes.ok) setAdmins(await adminsRes.json())
       if (commoditiesRes.ok) setCommodities(await commoditiesRes.json())
       if (ordersRes.ok) setOrders(await ordersRes.json())
     } catch (err) {
@@ -89,6 +97,7 @@ const SuperAdminDashboard: React.FC = () => {
       setLoading(false)
     }
   }
+
 
   const fetchAdminUsers = async (adminId: number) => {
     try {
@@ -135,9 +144,9 @@ const SuperAdminDashboard: React.FC = () => {
           <Users className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{users.length}</div>
+          <div className="text-2xl font-bold">{admins.length + users.length}</div>
           <p className="text-xs text-muted-foreground">
-            {users.filter(u => u.role === 'admin').length} Admins, {users.filter(u => u.role === 'user').length} Users
+            {admins.length} Admins, {users.length} Users
           </p>
         </CardContent>
       </Card>
@@ -294,6 +303,7 @@ const SuperAdminDashboard: React.FC = () => {
           </Alert>
         )}
 
+
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -307,21 +317,24 @@ const SuperAdminDashboard: React.FC = () => {
                 <div className="flex justify-between items-center">
                   <h3 className="text-lg font-semibold">User Management</h3>
                   <div className="flex space-x-2">
-                    <CreateAdminModal onAdminCreated={fetchData} />
-                    <CreateUserModal onUserCreated={fetchData} />
+                    <Button onClick={() => navigate('/create-admin')}>Add Admin</Button>
+                    <Button onClick={() => navigate('/create-user')}>Add User</Button>
                   </div>
                 </div>
                 
                 <div className="grid gap-4">
                   <div className="mb-4">
-                    <h4 className="font-semibold mb-2">Admins</h4>
-                    {users.filter(u => u.role === 'admin').map((admin) => (
+                    <h4 className="font-semibold mb-2">Admins ({admins.length})</h4>
+                    {admins.map((admin) => (
                       <Card key={admin.id} className="mb-2">
                         <CardContent className="p-4">
                           <div className="flex items-center justify-between">
                             <div>
                               <h4 className="font-semibold">{admin.username}</h4>
-                              <p className="text-sm text-gray-600">{admin.email}</p>
+                              <p className="text-sm text-gray-600">{admin.email || admin.name}</p>
+                              <p className="text-xs text-gray-500">
+                                Created: {new Date(admin.createdAt).toLocaleDateString()}
+                              </p>
                             </div>
                             <div className="flex items-center space-x-4">
                               <Badge variant="default">Admin</Badge>
@@ -341,14 +354,17 @@ const SuperAdminDashboard: React.FC = () => {
                   </div>
                   
                   <div>
-                    <h4 className="font-semibold mb-2">All Users</h4>
-                    {users.filter(u => u.role === 'user').map((u) => (
+                    <h4 className="font-semibold mb-2">All Users ({users.length})</h4>
+                    {users.map((u) => (
                       <Card key={u.id}>
                         <CardContent className="p-4">
                           <div className="flex items-center justify-between">
                             <div>
                               <h4 className="font-semibold">{u.username}</h4>
                               <p className="text-sm text-gray-600">{u.email}</p>
+                              <p className="text-xs text-gray-500">
+                                Created: {new Date(u.createdAt).toLocaleDateString()}
+                              </p>
                             </div>
                             <div className="flex items-center space-x-4">
                               <Badge variant="secondary">User</Badge>
