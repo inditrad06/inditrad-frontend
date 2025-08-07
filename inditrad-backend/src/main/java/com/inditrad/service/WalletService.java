@@ -38,14 +38,25 @@ public class WalletService {
 
         user.setWalletBalance(updatedBalance);
         userRepository.save(user);
+        
+        String transactionType = "";
+        String remarks = "";
+        
+        if ("ADD".equalsIgnoreCase(operation)) {
+            transactionType = "CREDIT";
+            remarks = "Amount added to wallet";
+        } else if ("SUBTRACT".equalsIgnoreCase(operation)) {
+            transactionType = "DEBIT";
+            remarks = "Amount deducted from wallet";
+        }
 
         WalletLog log = WalletLog.builder()
                 .user(user)
                 .changeAmount(amount)
-                .transactionType(operation)
+                .transactionType(transactionType)
                 .timestamp(LocalDateTime.now())
-                .remarks("Wallet " + operation)
-                .build();      // optional
+                .remarks(remarks)
+                .build();
         walletLogRepository.save(log);
 
         return updatedBalance;
