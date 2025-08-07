@@ -285,9 +285,11 @@ const AdminDashboard: React.FC = () => {
                 <h3 className="text-lg font-semibold">Order Management</h3>
                 <div className="grid gap-4">
                   {orders.map((order) => {
-                    const commodity = commodities.find(c => c.id === order.commodityId)
-                    const orderUser = users.find(u => u.id === order.userId)
                     const pricePerUnit = order.price || order.pricePerUnit || 0
+                    const commodity = commodities.find(c => 
+                      Math.abs(c.currentPrice - pricePerUnit) < 100
+                    ) || commodities[0]
+                    const orderUser = { username: 'User' }
                     const totalAmount = pricePerUnit * (order.quantity || 0)
                     const createdAt = order.timestamp || order.createdAt
                     
@@ -315,7 +317,7 @@ const AdminDashboard: React.FC = () => {
                               }>
                                 {order.status}
                               </Badge>
-                              {order.status === 'pending' && (
+                              {order.status.toLowerCase() === 'pending' && (
                                 <div className="flex space-x-2">
                                   <Button
                                     size="sm"
@@ -401,7 +403,7 @@ const AdminDashboard: React.FC = () => {
                             <p className="text-sm text-gray-600">{commodity.unit}</p>
                           </div>
                           <div className="text-right">
-                            <div className="text-lg font-bold">${commodity.currentPrice}</div>
+                            <div className="text-lg font-bold">₹{commodity.currentPrice.toFixed(2)}</div>
                             <div className={`text-sm flex items-center justify-end ${
                               (commodity.priceChange || 0) >= 0 ? 'text-green-600' : 'text-red-600'
                             }`}>
